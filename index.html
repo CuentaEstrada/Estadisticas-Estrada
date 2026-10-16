@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tabulación Final Encuestas 3-A y 3-B</title>
+  <style>
+    @font-face {
+      font-family: "Terraria";
+      src: url("Terraria.TTF") format("truetype");
+      font-style: normal;
+      font-weight: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #000;
+      --fg: #fff;
+      --muted: #aaa;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Terraria", sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+    }
+
+    button { font: inherit; }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+    }
+
+    #loader {
+      z-index: 10;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 900ms cubic-bezier(.22, 1, .36, 1), visibility 900ms linear;
+    }
+
+    #loader.hide {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .loading-wrap {
+      width: min(90vw, 900px);
+      text-align: center;
+      transition: transform 900ms cubic-bezier(.22, 1, .36, 1);
+    }
+
+    #loader.hide .loading-wrap { transform: translateY(-16px); }
+
+    .loading-title {
+      margin: 0;
+      font-size: clamp(3rem, 10vw, 8rem);
+      line-height: 1;
+      letter-spacing: .02em;
+      text-shadow: 0 0 18px rgba(255,255,255,.15);
+    }
+
+    #content {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      overflow: auto;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(24px);
+      filter: blur(8px);
+      transition: opacity 1100ms cubic-bezier(.22, 1, .36, 1),
+                  transform 1100ms cubic-bezier(.22, 1, .36, 1),
+                  filter 1100ms cubic-bezier(.22, 1, .36, 1),
+                  visibility 0s linear 1100ms;
+    }
+
+    #content.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      filter: blur(0);
+      transition: opacity 1100ms cubic-bezier(.22, 1, .36, 1),
+                  transform 1100ms cubic-bezier(.22, 1, .36, 1),
+                  filter 1100ms cubic-bezier(.22, 1, .36, 1),
+                  visibility 0s linear 0s;
+    }
+
+    .content-inner {
+      width: min(92vw, 1000px);
+      margin: auto;
+      text-align: center;
+    }
+
+    .placeholder-text {
+      margin: 0 auto 2rem;
+      max-width: 760px;
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .book {
+      width: min(100%, 760px);
+      margin: 0 auto;
+    }
+
+    .book-frame {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      border: 1px solid #333;
+      background: #080808;
+    }
+
+    #book-image {
+      display: block;
+      max-width: 100%;
+      max-height: min(65vh, 850px);
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+      transition:
+        opacity 320ms cubic-bezier(.22, 1, .36, 1),
+        transform 320ms cubic-bezier(.22, 1, .36, 1),
+        filter 320ms cubic-bezier(.22, 1, .36, 1);
+      will-change: opacity, transform, filter;
+    }
+
+    .book-frame.is-transitioning #book-image {
+      opacity: 0;
+      transform: translateY(12px) scale(.985);
+      filter: blur(8px);
+    }
+
+    #image-placeholder {
+      max-width: 100%;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .book-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .book-controls button {
+      padding: .65rem 1rem;
+      color: var(--fg);
+      background: #171717;
+      border: 1px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .book-controls button:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    #page-number {
+      min-width: 6rem;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #loader, .loading-wrap, #content, #book-image { transition-duration: 0ms !important; }
+    }
+
+
+    /* En teléfonos, la página queda bloqueada mientras el dispositivo esté en vertical. */
+    #orientation-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: #000;
+      color: #fff;
+      text-align: center;
+    }
+
+    .orientation-warning-inner {
+      width: min(100%, 420px);
+    }
+
+    .orientation-icon {
+      display: block;
+      margin-bottom: 1.5rem;
+      font-family: Arial, sans-serif;
+      font-size: clamp(4rem, 18vw, 6rem);
+      line-height: 1;
+      animation: rotate-hint 1.8s ease-in-out infinite;
+    }
+
+    .orientation-warning h2 {
+      margin: 0 0 1rem;
+      font-size: clamp(1.8rem, 7vw, 2.6rem);
+      line-height: 1.2;
+    }
+
+    .orientation-warning p {
+      margin: 0;
+      color: #aaa;
+      font-size: clamp(1rem, 4vw, 1.25rem);
+      line-height: 1.5;
+    }
+
+    @keyframes rotate-hint {
+      0%, 15% { transform: rotate(0deg); }
+      55%, 85% { transform: rotate(90deg); }
+      100% { transform: rotate(90deg); }
+    }
+
+    @media screen and (max-width: 767px) and (orientation: portrait) {
+      #orientation-warning { display: flex; }
+      body { overflow: hidden !important; }
+    }
+  </style>
+</head>
+<body>
+  <section id="orientation-warning" class="orientation-warning" role="alert" aria-live="polite">
+    <div class="orientation-warning-inner">
+      <span class="orientation-icon" aria-hidden="true">↻</span>
+      <h2>Girá el teléfono</h2>
+      <p>Esta página solo se puede usar en horizontal. Girá tu teléfono para continuar.</p>
+    </div>
+  </section>
+  <section id="loader" class="screen" aria-live="polite">
+    <div class="loading-wrap">
+      <h1 class="loading-title">Cargando imágenes...</h1>
+    </div>
+  </section>
+
+  <main id="content" aria-hidden="true">
+    <div class="content-inner">
+      <p class="placeholder-text">Tabulación final.</p>
+
+      <section class="book" aria-label="Book viewer">
+        <div class="book-frame">
+          <img id="book-image" alt="[PLACEHOLDER: image description]" hidden />
+          <p id="image-placeholder">[PLACEHOLDER: add image1.png, image2.png, image3.png, etc. to this folder]</p>
+        </div>
+        <div class="book-controls">
+          <button id="previous-button" type="button" disabled>Anterior</button>
+          <span id="page-number">Estadistica: 1</span>
+          <button id="next-button" type="button">Siguiente</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const loader = document.getElementById("loader");
+    const content = document.getElementById("content");
+
+    let remaining = 5;
+    const timer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(timer);
+        setTimeout(() => {
+          loader.classList.add("hide");
+          content.classList.add("show");
+          content.setAttribute("aria-hidden", "false");
+          document.body.style.overflow = "auto";
+        }, 220);
+      }
+    }, 1000);
+
+    // The book images should be named image1, image2, image3, ...
+    // Supported extensions: .png, .jpg, .jpeg and .webp.
+    const extensions = ["png", "jpg", "jpeg", "webp"];
+    const MAX_PAGE = 12;
+    const TRANSITION_MS = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 320;
+    const bookFrame = document.querySelector(".book-frame");
+    const bookImage = document.getElementById("book-image");
+    const imagePlaceholder = document.getElementById("image-placeholder");
+    const previousButton = document.getElementById("previous-button");
+    const nextButton = document.getElementById("next-button");
+    const pageNumber = document.getElementById("page-number");
+
+    let currentImage = 1;
+    let sequenceEndPage = MAX_PAGE;
+    let isLoadingImage = false;
+
+    function probeImage(number, extensionIndex = 0) {
+      return new Promise((resolve) => {
+        if (extensionIndex >= extensions.length) {
+          resolve(null);
+          return;
+        }
+
+        const path = `image${number}.${extensions[extensionIndex]}`;
+        const probe = new Image();
+        probe.onload = () => resolve(path);
+        probe.onerror = () => resolve(probeImage(number, extensionIndex + 1));
+        probe.src = path;
+      });
+    }
+
+    function updateNavigationButtons() {
+      previousButton.disabled = isLoadingImage || currentImage <= 1;
+      nextButton.disabled = isLoadingImage || currentImage >= MAX_PAGE || currentImage >= sequenceEndPage;
+    }
+
+    function nextFrame() {
+      return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+    }
+
+    async function showImage(number) {
+      if (number < 1 || number > MAX_PAGE || isLoadingImage) return;
+
+      isLoadingImage = true;
+      updateNavigationButtons();
+
+      const path = await probeImage(number);
+      if (path) {
+        // Fade the current page out before replacing it, then fade the new one in.
+        if (!bookImage.hidden && bookImage.getAttribute("src")) {
+          bookFrame.classList.add("is-transitioning");
+          if (TRANSITION_MS > 0) {
+            await new Promise((resolve) => setTimeout(resolve, TRANSITION_MS));
+          }
+        }
+
+        currentImage = number;
+        bookImage.src = path;
+        bookImage.hidden = false;
+        imagePlaceholder.hidden = true;
+        pageNumber.textContent = `Estadistica: ${currentImage}`;
+
+        if (bookFrame.classList.contains("is-transitioning")) {
+          await nextFrame();
+          await nextFrame();
+          bookFrame.classList.remove("is-transitioning");
+        }
+      } else {
+        // A missing numbered image marks the end of the available sequence.
+        if (number === 1) {
+          bookImage.hidden = true;
+          imagePlaceholder.hidden = false;
+        }
+        if (number > 1) {
+          sequenceEndPage = Math.min(sequenceEndPage, currentImage);
+        }
+      }
+
+      isLoadingImage = false;
+      updateNavigationButtons();
+    }
+
+    previousButton.addEventListener("click", () => showImage(currentImage - 1));
+    nextButton.addEventListener("click", () => showImage(currentImage + 1));
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") showImage(currentImage - 1);
+      if (event.key === "ArrowRight") showImage(currentImage + 1);
+    });
+
+    updateNavigationButtons();
+    showImage(1);
+  </script>
+</body>
+</html>
