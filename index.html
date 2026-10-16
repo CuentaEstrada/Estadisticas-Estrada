@@ -201,9 +201,68 @@
     @media (prefers-reduced-motion: reduce) {
       #loader, .loading-wrap, #content, #book-image { transition-duration: 0ms !important; }
     }
+
+
+    /* En teléfonos, la página queda bloqueada mientras el dispositivo esté en vertical. */
+    #orientation-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: #000;
+      color: #fff;
+      text-align: center;
+    }
+
+    .orientation-warning-inner {
+      width: min(100%, 420px);
+    }
+
+    .orientation-icon {
+      display: block;
+      margin-bottom: 1.5rem;
+      font-family: Arial, sans-serif;
+      font-size: clamp(4rem, 18vw, 6rem);
+      line-height: 1;
+      animation: rotate-hint 1.8s ease-in-out infinite;
+    }
+
+    .orientation-warning h2 {
+      margin: 0 0 1rem;
+      font-size: clamp(1.8rem, 7vw, 2.6rem);
+      line-height: 1.2;
+    }
+
+    .orientation-warning p {
+      margin: 0;
+      color: #aaa;
+      font-size: clamp(1rem, 4vw, 1.25rem);
+      line-height: 1.5;
+    }
+
+    @keyframes rotate-hint {
+      0%, 15% { transform: rotate(0deg); }
+      55%, 85% { transform: rotate(90deg); }
+      100% { transform: rotate(90deg); }
+    }
+
+    @media screen and (max-width: 767px) and (orientation: portrait) {
+      #orientation-warning { display: flex; }
+      body { overflow: hidden !important; }
+    }
   </style>
 </head>
 <body>
+  <section id="orientation-warning" class="orientation-warning" role="alert" aria-live="polite">
+    <div class="orientation-warning-inner">
+      <span class="orientation-icon" aria-hidden="true">↻</span>
+      <h2>Girá el teléfono</h2>
+      <p>Esta página solo se puede usar en horizontal. Girá tu teléfono para continuar.</p>
+    </div>
+  </section>
   <section id="loader" class="screen" aria-live="polite">
     <div class="loading-wrap">
       <h1 class="loading-title">Cargando imagenes...</h1>
